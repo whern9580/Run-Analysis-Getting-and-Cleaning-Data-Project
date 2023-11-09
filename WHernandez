@@ -1,0 +1,72 @@
+#load dplyr package for needed functions to perform on dataframe
+install.packages("dplyr")
+library(dplyr) 
+
+#COLLECT AND PREP DATA
+#---------------------
+#Open directory to location of datasets and read the datasets as objects using read.table function.
+activityInfo <- read.table("activity_labels.txt", header=FALSE, col.names = c("code", "activityName"))
+featureNames <- read.table("features.txt", header=FALSE, col.names = c("feature_id", "feature_names"))
+
+#Read Train Datasets:
+subjectTrain <- read.table("../UCI HAR Dataset/train/subject_train.txt", header = FALSE, col.names = "subject")
+YTrain <- read.table("../UCI HAR Dataset/train/Y_train.txt", header = FALSE, col.names = "code")
+XTrain <- read.table("../UCI HAR Dataset/train/X_train.txt", header = FALSE)
+
+#Read Test Datasets:
+subjectTest <- read.table("../UCI HAR Dataset/test/subject_test.txt", header = FALSE, col.names = "subject")
+YTest <- read.table("../UCI HAR Dataset/test/Y_test.txt", header = FALSE, col.names = "code")
+XTest <- read.table("../UCI HAR Dataset/test/X_test.txt", header = FALSE)
+
+#Rename columns to match feature names
+colnames(XTest) <- featureNames$feature_names
+colnames(XTrain) <- featureNames$feature_names
+
+
+#---------------------
+#Part 2 - Extracts only the measurements on the mean and standard deviation for each measurement
+#NOTE: I selected the mean and standard deviation first and then merged which I found to be easier.
+
+XTestMean <- XTest %>% select(contains("mean") | contains("std"))
+XTrainMean <- XTrain %>% select(contains("mean") | contains("std"))
+
+#---------------------
+
+#Part 1 - Merge the training and the test sets to create one data set
+
+#Combine respective datasets into three separate datasets and then combine all three datasets into one merged dataset.
+subject <- rbind(subjectTrain, subjectTest)
+X <- rbind(XTestMean, XTrainMean)
+Y <- rbind(YTest, YTrain)
+mergeAll <- cbind(subject, Y, X)
+
+#---------------------
+
+#Part3 - Uses descriptive activity names to name the activities in the data set
+
+#Replace activity number with activity name
+mergeAll <- mergeAll %>% 
+  mutate(code = activityInfo[mergeAll$code, 2])
+
+#---------------------
+
+#Part4 - Appropriately labels the data set with descriptive variable names. 
+
+names(mergeAll)
+names(mergeAll)<-gsub("tBody", "TimeBody", names(mergeAll))
+names(mergeAll)<-gsub("Acc", "Accelerometer", names(mergeAll), ignore.case=TRUE)
+names(mergeAll)<-gsub("gravity", "Gravity", names(mergeAll), ignore.case=TRUE)
+names(mergeAll)<-gsub("tgravity", "TGravity", names(mergeAll), ignore.case=TRUE)
+names(mergeAll)<-gsub("fbody", "FrequencyBody", names(mergeAll), ignore.case=TRUE)
+names(mergeAll)
+
+#---------------------
+
+#Part5 From the data set in step 4, creates a second, independent tidy data set 
+#with the average of each variable for each activity and each subject.
+
+avg_of_columns <- mergeAll %>%
+  group_by(subject, code) %>%
+  summarise_all(mean)
+
+write.table(mergeAll, file = "cleandata.txt", row.names = FALSE)
