@@ -10,3 +10,4 @@ Merges the training and the test sets to create one data set.
 6. created another dataset with only the mean and standard deviations data  -- this was done before merging the dataset.
 7. Merged datasets to create a new tidy dataset.
 8. created final dataset of the averages grouped by subject and activity code.
+
